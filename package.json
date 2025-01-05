@@ -5,8 +5,8 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "build": "npm install && npx playwright install chromium && npx playwright install-deps chromium --with-deps",
-    "postinstall": "npx playwright install chromium && npx playwright install-deps chromium --with-deps"
+    "build": "npx playwright install chromium",
+    "vercel-build": "npx playwright install chromium"
   },
   "dependencies": {
     "cors": "^2.8.5",
