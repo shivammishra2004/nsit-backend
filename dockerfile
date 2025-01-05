@@ -1,3 +1,4 @@
+    libpangocairo-1.0-0 \
 # Use the official Node.js image
 FROM node:16-slim
 
@@ -16,6 +17,13 @@ RUN apt-get update && apt-get install -y \
     libpangoft2-1.0-0 \
     libxshmfence1 \
     fonts-noto-color-emoji \
+    libgstgl-1.0.so.0 \
+    libgstcodecparsers-1.0.so.0 \
+    libavif.so.15 \
+    libenchant-2.so.2 \
+    libsecret-1.so.0 \
+    libmanette-0.2.so.0 \
+    libGLESv2.so.2 \
     --no-install-recommends && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
