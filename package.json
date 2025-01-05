@@ -4,15 +4,17 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "postinstall": "npx playwright install-deps"
+    "postinstall": "npx playwright install chromium && npx playwright install-deps chromium --with-deps"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.18.2",
     "node-tesseract-ocr": "^2.0.0",
-    "playwright": "^1.38.0",
-    "playwright-aws-lambda": "^0.11.0",
-    "playwright-core": "^1.49.1"
+    "playwright": "^1.41.0",
+    "playwright-core": "^1.41.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
