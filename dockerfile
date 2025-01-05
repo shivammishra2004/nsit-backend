@@ -1,4 +1,3 @@
-    libpangocairo-1.0-0 \
 # Use the official Node.js image
 FROM node:16-slim
 
@@ -24,6 +23,15 @@ RUN apt-get update && apt-get install -y \
     libsecret-1.so.0 \
     libmanette-0.2.so.0 \
     libGLESv2.so.2 \
+    libdrm2 \
+    libgbm1 \
+    libx11-xcb1 \
+    libu2f-udev \
+    libpci3 \
+    libxtst6 \
+    libxss1 \
+    libgdk-pixbuf2.0-0 \
+    libnspr4 \
     --no-install-recommends && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*

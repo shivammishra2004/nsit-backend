@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const playwright = require("playwright-aws-lambda");
+const playwright = require("playwright");
 const tesseract = require("node-tesseract-ocr");
 const path = require("path");
 
