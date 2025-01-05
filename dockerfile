@@ -1,55 +1,45 @@
-# Use the official Node.js image
-FROM node:16-slim
+FROM node:18-slim
 
-# Install dependencies required by Playwright
+# Install dependencies for Playwright and Tesseract
 RUN apt-get update && apt-get install -y \
+    wget \
+    python3 \
+    build-essential \
+    tesseract-ocr \
     libnss3 \
+    libnspr4 \
     libatk1.0-0 \
     libatk-bridge2.0-0 \
     libcups2 \
-    libdbus-1-3 \
-    libxcomposite1 \
-    libxrandr2 \
-    libxdamage1 \
-    libasound2 \
-    libpangocairo-1.0-0 \
-    libpangoft2-1.0-0 \
-    libxshmfence1 \
-    fonts-noto-color-emoji \
-    libgstgl-1.0.so.0 \
-    libgstcodecparsers-1.0.so.0 \
-    libavif.so.15 \
-    libenchant-2.so.2 \
-    libsecret-1.so.0 \
-    libmanette-0.2.so.0 \
-    libGLESv2.so.2 \
     libdrm2 \
+    libdbus-1-3 \
+    libxkbcommon0 \
+    libatspi2.0-0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
     libgbm1 \
-    libx11-xcb1 \
-    libu2f-udev \
-    libpci3 \
-    libxtst6 \
-    libxss1 \
-    libgdk-pixbuf2.0-0 \
-    libnspr4 \
-    --no-install-recommends && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    libasound2 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
+# Create app directory
 WORKDIR /app
 
-# Copy application code
-COPY . .
+# Copy package files
+COPY package*.json ./
 
-# Install Node.js dependencies
+# Install app dependencies
 RUN npm install
 
 # Install Playwright browsers
-RUN npx playwright install
+RUN npx playwright install chromium
 
-# Expose the application port
+# Copy app source
+COPY . .
+
+# Expose port
 EXPOSE 3000
 
 # Start the application
-CMD ["npm", "start"]
+CMD [ "npm", "start" ]
