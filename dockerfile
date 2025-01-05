@@ -1,20 +1,28 @@
-# Use Microsoft's Playwright image that comes with all dependencies
-FROM mcr.microsoft.com/playwright:v1.41.0-focal
+FROM node:18-slim
+
+# Install dependencies for Playwright and Tesseract
+RUN apt-get update && apt-get install -y \
+    wget \
+    python3 \
+    build-essential \
+    tesseract-ocr \
+    && rm -rf /var/lib/apt/lists/*
 
 # Create app directory
 WORKDIR /app
 
-# Install node dependencies
+# Copy package files
 COPY package*.json ./
+
+# Install app dependencies
 RUN npm install
+
+# Install Playwright browsers and dependencies
+RUN npx playwright install chromium
+RUN npx playwright install-deps chromium --with-deps
 
 # Copy app source
 COPY . .
-
-# Install additional Tesseract dependencies
-RUN apt-get update && apt-get install -y \
-    tesseract-ocr \
-    && rm -rf /var/lib/apt/lists/*
 
 # Expose port
 EXPOSE 3000
