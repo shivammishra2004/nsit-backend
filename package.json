@@ -4,6 +4,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
+    "dev": "nodemon index.js",
+    "build": "npm install && npx playwright install chromium && npx playwright install-deps chromium --with-deps",
     "postinstall": "npx playwright install chromium && npx playwright install-deps chromium --with-deps"
   },
   "dependencies": {
@@ -11,8 +13,11 @@
     "dotenv": "^16.4.7",
     "express": "^4.18.2",
     "node-tesseract-ocr": "^2.0.0",
+    "nodemon": "^3.1.9",
     "playwright": "^1.41.0",
-    "playwright-core": "^1.41.0"
+    "playwright-aws-lambda": "^0.11.0",
+    "playwright-core": "^1.41.0",
+    "puppeteer": "^23.11.1"
   },
   "engines": {
     "node": ">=18.0.0"

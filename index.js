@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const { chromium } = require('playwright-core');
+const playwright = require("playwright-aws-lambda");
 const tesseract = require("node-tesseract-ocr");
 const path = require("path");
 
@@ -33,14 +33,9 @@ async function scrapeAttendance(userId, password, year, semester) {
 
     try {
         // Initialize browser
-        const browser = await chromium.launch({
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox'],
-            logger: {
-                isEnabled: (name, severity) => true,
-                log: (name, severity, message, args) => console.log(`${name} ${severity}: ${message}`)
-            }
-        });
+        const browser = process.env.NODE_ENV === "production"
+        ? await playwright.launchChromium()
+        : await require("playwright").chromium.launch({ headless: true });
         context = await browser.newContext({
             userAgent: CONFIG.browser.userAgent,
             viewport: CONFIG.browser.viewport,
