@@ -33,6 +33,10 @@ async function scrapeAttendance(userId, password, year, semester) {
 
     try {
         // Initialize browser
+        // const browser = process.env.NODE_ENV === "production"
+        // ? await playwright.launchChromium()
+        // : await require("playwright").chromium.launch({ headless: false });
+
         const browser = process.env.NODE_ENV === "production"
         ? await playwright.launchChromium()
         : await require("playwright").chromium.launch({ headless: true });
