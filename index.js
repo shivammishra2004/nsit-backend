@@ -22,7 +22,6 @@ const CONFIG = {
         screen: { width: 1920, height: 1080 },
     },
     paths: {
-        captchaFile: "captcha.jpg",
         baseUrl: "https://www.imsnsit.org/imsnsit/",
     }
 };
@@ -81,11 +80,13 @@ async function scrapeAttendance(userId, password, year, semester) {
         const errorLocator = bannerFrame.locator('.plum_field', { hasText: 'Invalid Security Number' });
         if (await errorLocator.count() > 0) {
             throw new Error('Invalid credentials or captcha');
+            process.exit(1);
         }
 
         // Wait for My Activities link and click
         const activitiesLink = await bannerFrame.locator('a:has-text("My Activities")');
         await activitiesLink.click();
+
         await page.waitForTimeout(500);
 
         // Navigate to attendance
