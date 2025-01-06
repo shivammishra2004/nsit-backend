@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const { chromium } = require("playwright");
 const tesseract = require("node-tesseract-ocr");
-const path = require("path");
+require('dotenv').config();
 
 const app = express();
 app.use(cors());
@@ -29,7 +29,7 @@ const CONFIG = {
 
 // Core functionality
 const initializeBrowser = async () => {
-    const browser = await chromium.launch({ headless: true });
+    const browser = await chromium.launch({ headless: false});
     const context = await browser.newContext({
         userAgent: CONFIG.browser.userAgent,
         viewport: CONFIG.browser.viewport,
@@ -350,7 +350,7 @@ app.get("/health", (req, res) => {
     res.json({ status: "healthy" });
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT;
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
