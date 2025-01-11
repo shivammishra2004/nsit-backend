@@ -1,8 +1,10 @@
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 const { chromium } = require("playwright");
 const tesseract = require("node-tesseract-ocr");
 require('dotenv').config();
+
 
 const app = express();
 app.use(cors());
@@ -16,6 +18,7 @@ const CONFIG = {
         psm: 8,
         tessedit_char_whitelist: "0123456789",
     },
+    tessdataDir: path.resolve(__dirname, "data"),
     browser: {
         userAgent:
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36",
@@ -26,10 +29,9 @@ const CONFIG = {
         baseUrl: "https://www.imsnsit.org/imsnsit/",
     },
 };
-
 // Core functionality
 const initializeBrowser = async () => {
-    const browser = await chromium.launch({ headless: false});
+    const browser = await chromium.launch({ headless: true});
     const context = await browser.newContext({
         userAgent: CONFIG.browser.userAgent,
         viewport: CONFIG.browser.viewport,
@@ -44,7 +46,11 @@ const handleCaptcha = async (frame) => {
         type: "jpeg",
         encoding: "base64",
     });
+
     try {
+        // Set the TESSDATA_PREFIX environment variable
+        process.env.TESSDATA_PREFIX = CONFIG.tessdataDir;
+
         const text = await tesseract.recognize(
             Buffer.from(captchaBuffer, "base64"),
             CONFIG.tesseract
@@ -328,7 +334,7 @@ app.get("/health", (req, res) => {
     res.json({ status: "healthy" });
 });
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
