@@ -65,102 +65,69 @@ const grabFrame = async (page, wanted) => {
     if (!frame) {
         throw new Error("Banner frame not found");
     }
-    console.log("Found banner frame");
+    console.log(`Found ${wanted} frame`);
     return frame; // Return the frame for further actions
 };
 
-const checkInvalidCaptcha = async (frame) => {
-    const errorLocator = frame.locator(".plum_field", {
-        hasText: "Invalid Security Number",
-    });
+const checkError = async (frame) => {
+    const errorMessages = {
+        "You are not authorised to use this Login": {
+            success: false,
+            message: "User ID is not valid",
+            error: "INVALID_USER_ID"
+        },
+        "Your password does not match.": {
+            success: false,
+            message: "Password is not valid",
+            error: "INVALID_PASSWORD"
+        },
+        "Invalid Security Number": null // null indicates captcha error
+    };
 
-    // Check if the element exists
-    if ((await errorLocator.count()) > 0) {
-        console.log("Tesseract Failed!!");
-        return true; // Captcha is invalid
+    for (const [errorText, response] of Object.entries(errorMessages)) {
+        const errorLocator = frame.locator(".plum_field", { hasText: errorText });
+        if (await errorLocator.count() > 0) {
+            console.log(`Error found: ${errorText}`);
+            return response;
+        }
     }
-
-    console.log("No invalid captcha message found.");
-    return false; // Captcha is valid
-};
-
-const checkInvalidPassword = async (frame) => {
-    const errorLocator = frame.locator(".plum_field", {
-        hasText: "Your password does not match.",
-    });
-
-    // Check if the element exists
-    if ((await errorLocator.count()) > 0) {
-        console.log('wrong password')
-        return true; // Captcha is invalid
-    }
-    return false; // Captcha is valid
-};
-
-const checkInvalidUserId = async (frame) => {
-    const errorLocator = frame.locator(".plum_field", {
-        hasText: "You are not authorised to use this Login",
-    });
-
-    // Check if the element exists
-    if ((await errorLocator.count()) > 0) {
-        console.log('wrong user id')
-        return true; // Captcha is invalid
-    }
-    return false; // Captcha is valid
+    return { success: true }; // No errors found
 };
 
 const loginToPortal = async (frame, userId, password) => {
     try {
+        const attemptLogin = async () => {
+            await frame.fill("#uid", userId);
+            await frame.fill("#pwd", password);
+            const captchaText = await handleCaptcha(frame);
+            await frame.fill("#cap", captchaText);
+            await frame.click("#login");
+            await frame.waitForTimeout(100);
+
+            const errorResult = await checkError(frame);
+            if (!errorResult.success) {
+                return errorResult;
+            }
+            if (errorResult.success) {
+                return {
+                    success: true,
+                    message: "Login successful",
+                    captchaText
+                };
+            }
+            return null; // Captcha error, try again
+        };
+
         // First attempt
-        await frame.fill("#uid", userId);
-        await frame.fill("#pwd", password);
-        let captchaText = await handleCaptcha(frame);
-        await frame.fill("#cap", captchaText);
-        await frame.click("#login");
-        await frame.waitForTimeout(500);
+        let result = await attemptLogin();
+        if (result) return result;
 
-        let isInvalidUserId = await checkInvalidUserId(frame);
-        if (isInvalidUserId) {
-            return {
-                success: false,
-                message: "User ID is not valid",
-                error: "INVALID_USER_ID"
-            };
-        }
-        let isInvalidPassword = await checkInvalidPassword(frame);
-        if (isInvalidPassword) {
-            return {
-                success: false,
-                message: "Password is not valid",
-                error: "INVALID_PASSWORD"
-            };
-        }
-
-        let isInvalidCaptcha = await checkInvalidCaptcha(frame);
-        if (!isInvalidCaptcha) {
-            return {
-                success: true,
-                message: "Login successful",
-                captchaText
-            };
-        }
-
-        // Second attempt with handleCaptcha
-        await frame.fill("#uid", userId);
-        await frame.fill("#pwd", password);
-        captchaText = await handleCaptcha(frame);
-        await frame.fill("#cap", captchaText);
-        await frame.click("#login");
-        await frame.waitForTimeout(500);
-
-        isInvalidCaptcha = await checkInvalidCaptcha(frame);
-        if (!isInvalidCaptcha) {
-            return {
-                success: true,
-                message: "Login successful after second attempt",
-                captchaText
-            };
+        // Second attempt
+        result = await attemptLogin();
+        if (result) {
+            return result.success ? 
+                { ...result, message: "Login successful after second attempt" } : 
+                result;
         }
 
         return {
@@ -177,16 +144,15 @@ const loginToPortal = async (frame, userId, password) => {
         };
     }
 };
-
 const navigateToAttendance = async (page) => {
-    await page.waitForTimeout(100);
+    // await page.waitForTimeout(100);
 
     // Access the frame using frameLocator
     const topFrame = page.frameLocator('frameset[name="fset1"] frame[name="top"]');
     // Wait for the frame's content to be attached
     await topFrame.locator("html").waitFor({ state: "attached" });
     await topFrame.locator('a:text("Expand All")').click();
-    await page.waitForTimeout(100);
+    // await page.waitForTimeout(100);
     await topFrame.locator('a:has-text("MyAttendance")').click();
     console.log('Clicked "MyAttendance" link');
 };
