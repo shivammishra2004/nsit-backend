@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "nodemon index.js",
     "start": "node index.js",
-    "build": "npm install"
+    "build": "npm install",
+    "postinstall": "playwright install"
   },
   "dependencies": {
     "cors": "^2.8.5",

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance Checker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+
+    label {
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    input,
+    select {
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    button {
+      padding: 10px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .result {
+      margin-top: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    table, th, td {
+      border: 1px solid #ddd;
+    }
+
+    th, td {
+      text-align: center;
+      padding: 8px;
+    }
+
+    th {
+      background-color: #007BFF;
+      color: white;
+    }
+
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Check Attendance</h1>
+    <form id="attendanceForm">
+        <label for="userId">User ID</label>
+        <input type="text" id="userId" name="userId" placeholder="Enter your User ID" value = "2023UCM2370" required>
+      
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Enter your Password" value="@" required>
+      
+        <label for="year">Year</label>
+        <select id="year" name="year" required>
+          <option value="2023-24" selected>2023-24</option>
+          <option value="2024-25">2024-25</option>
+        </select>
+      
+        <label for="semester">Semester</label>
+        <select id="semester" name="semester" required>
+          <option value="1" selected>1st Semester</option>
+          <option value="2">2nd Semester</option>
+          <option value="3">3rd Semester</option>
+          <option value="4">4th Semester</option>
+          <option value="5">5th Semester</option>
+          <option value="6">6th Semester</option>
+          <option value="7">7th Semester</option>
+          <option value="8">8th Semester</option>
+        </select>
+      
+        <button type="submit">Submit</button>
+      </form>
+
+    <div class="result" id="result" style="display: none;"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById('attendanceForm');
+    const resultDiv = document.getElementById('result');
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault(); // Prevent the form from refreshing the page
+
+      // Get user inputs
+      const userId = document.getElementById('userId').value;
+      const password = document.getElementById('password').value;
+      const year = document.getElementById('year').value;
+      const semester = document.getElementById('semester').value;
+
+      // Send the data to the backend
+      try {
+        const response = await fetch('http://localhost:3000/attendance', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId, password, year, semester }),
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.data) {
+          resultDiv.style.display = 'block';
+          resultDiv.innerHTML = `
+            <h4>Attendance Summary:</h4>
+            ${generateTable(data.data)}
+          `;
+        } else {
+          resultDiv.style.display = 'block';
+          resultDiv.innerHTML = `<span class="error">Error: ${data.error || 'Unexpected response from server'}</span>`;
+        }
+      } catch (error) {
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = `<span class="error">Network Error: ${error.message}</span>`;
+      }
+    });
+
+    function generateTable(data) {
+      const { headers, overallStats } = data;
+
+      let tableHTML = `<table>
+        <thead>
+          <tr>${headers.map(header => `<th>${header}</th>`).join('')}</tr>
+        </thead>
+        <tbody>`;
+
+      for (const key in overallStats) {
+        tableHTML += `
+          <tr>
+            ${overallStats[key].map(cell => `<td>${cell}</td>`).join('')}
+          </tr>
+        `;
+      }
+
+      tableHTML += `</tbody></table>`;
+      return tableHTML;
+    }
+  </script>
+</body>
+</html>

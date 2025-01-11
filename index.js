@@ -10,6 +10,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+
 // Configuration constants
 const CONFIG = {
     tesseract: {
@@ -31,7 +32,7 @@ const CONFIG = {
 };
 // Core functionality
 const initializeBrowser = async () => {
-    const browser = await chromium.launch({ headless: true});
+    const browser = await chromium.launch({ headless: false});
     const context = await browser.newContext({
         userAgent: CONFIG.browser.userAgent,
         viewport: CONFIG.browser.viewport,
@@ -113,7 +114,7 @@ const attemptLogin = async (frame, userId, password) => {
     await frame.fill("#pwd", password);
     await frame.fill("#cap", captchaText);
     await frame.click("#login");
-    await frame.waitForTimeout(100);
+    await frame.waitForTimeout(500);
 };
 
 const loginToPortal = async (frame, userId, password) => {
@@ -301,6 +302,7 @@ app.post("/attendance", async (req, res) => {
     try {
         // Extract the data from the request body
         const { userId, password, year, semester } = req.body;
+        console.log("Request body:", req.body); // Debug log
 
         // Check if all required fields are present
         if (!userId || !password || !year || !semester) {
