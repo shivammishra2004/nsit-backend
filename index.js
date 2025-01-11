@@ -69,7 +69,7 @@ const grabFrame = async (page, wanted) => {
     return frame; // Return the frame for further actions
 };
 
-const checkError = async (frame) => {
+const checkError = async (frame, logMessage) => {
     const errorMessages = {
         "You are not authorised to use this Login": {
             success: false,
@@ -81,61 +81,68 @@ const checkError = async (frame) => {
             message: "Password is not valid",
             error: "INVALID_PASSWORD"
         },
-        "Invalid Security Number": null // null indicates captcha error
+        "Invalid Security Number": {
+            success: false,
+            message: "Captcha is not valid",
+            error: "INVALID_CAPTCHA"
+        }
     };
 
-    for (const [errorText, response] of Object.entries(errorMessages)) {
+    for (const [errorText, errorResponse] of Object.entries(errorMessages)) {
         const errorLocator = frame.locator(".plum_field", { hasText: errorText });
-        if (await errorLocator.count() > 0) {
-            console.log(`Error found: ${errorText}`);
-            return response;
+
+        // Check if the error text exists
+        if ((await errorLocator.count()) > 0) {
+            console.log(logMessage);
+            return errorResponse;
         }
     }
-    return { success: true }; // No errors found
+
+    return null; // No error
+};
+
+const attemptLogin = async (frame, userId, password) => {
+    let captchaText = await handleCaptcha(frame);
+    await frame.fill("#uid", userId);
+    await frame.fill("#pwd", password);
+    await frame.fill("#cap", captchaText);
+    await frame.click("#login");
+    await frame.waitForTimeout(100);
 };
 
 const loginToPortal = async (frame, userId, password) => {
     try {
-        const attemptLogin = async () => {
-            await frame.fill("#uid", userId);
-            await frame.fill("#pwd", password);
-            const captchaText = await handleCaptcha(frame);
-            await frame.fill("#cap", captchaText);
-            await frame.click("#login");
-            await frame.waitForTimeout(100);
+        // First attempt
+        await attemptLogin(frame, userId, password);
 
-            const errorResult = await checkError(frame);
-            if (!errorResult.success) {
-                return errorResult;
+        let errorResponse = await checkError(frame, "Error detected during first login attempt");
+        if (errorResponse) {
+            // If the error is not related to captcha, return immediately
+            if (errorResponse.error !== "INVALID_CAPTCHA") {
+                return errorResponse;
             }
-            if (errorResult.success) {
+
+            // Retry if the error is related to captcha
+            console.log("Retrying login due to invalid captcha...");
+            await attemptLogin(frame, userId, password);
+            errorResponse = await checkError(frame, "Error detected during second login attempt");
+
+            // If no error after second attempt, return success
+            if (!errorResponse) {
                 return {
                     success: true,
-                    message: "Login successful",
-                    captchaText
+                    message: "Login successful after second attempt",
                 };
             }
-            return null; // Captcha error, try again
-        };
 
-        // First attempt
-        let result = await attemptLogin();
-        if (result) return result;
-
-        // Second attempt
-        result = await attemptLogin();
-        if (result) {
-            return result.success ? 
-                { ...result, message: "Login successful after second attempt" } : 
-                result;
+            // Return the error after second attempt
+            return errorResponse;
         }
 
         return {
-            success: false,
-            message: "Login failed after multiple attempts",
-            error: "MULTIPLE_ATTEMPTS_FAILED"
+            success: true,
+            message: "Login successful",
         };
-
     } catch (error) {
         return {
             success: false,
@@ -144,16 +151,21 @@ const loginToPortal = async (frame, userId, password) => {
         };
     }
 };
-const navigateToAttendance = async (page) => {
-    // await page.waitForTimeout(100);
 
-    // Access the frame using frameLocator
-    const topFrame = page.frameLocator('frameset[name="fset1"] frame[name="top"]');
-    // Wait for the frame's content to be attached
-    await topFrame.locator("html").waitFor({ state: "attached" });
-    await topFrame.locator('a:text("Expand All")').click();
-    // await page.waitForTimeout(100);
-    await topFrame.locator('a:has-text("MyAttendance")').click();
+
+const navigateToAttendance = async (page) => {
+    const topFrame = page.frameLocator('frame[name="top"]');
+    
+    // Wait for frame attachment and perform clicks in parallel
+    await Promise.all([
+        topFrame.locator("html").waitFor({ state: "attached" }),
+        // Using Promise.all for concurrent clicks with proper wait handling
+        Promise.all([
+            topFrame.locator('a:text("Expand All")').click(),
+            // The second click will automatically wait for the first one
+            topFrame.locator('a:has-text("MyAttendance")').click()
+        ])
+    ]);
     console.log('Clicked "MyAttendance" link');
 };
 
@@ -255,9 +267,9 @@ const scrapeAttendance = async (userId, password, year, semester) => {
         // Click the link
         await linkHandle.click();
         console.log('clicked my activities');
-        await page.waitForTimeout(250);
+        // await page.waitForTimeout(250);
         await navigateToAttendance(page);
-        await page.waitForTimeout(250);
+        // await page.waitForTimeout(250);
         const frame = await grabFrame(page, "data");
         // const data = await extractAttendanceData(frame,'2024-25','4');
         const data = await extractAttendanceData(frame, year, semester);
